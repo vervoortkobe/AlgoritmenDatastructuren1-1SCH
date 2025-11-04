@@ -1,0 +1,6 @@
+cons : ( any any -> pair )
+car : ( pair -> any )
+cdr : ( pair -> any )
+vector-ref : ( vector number -> any )
+vector-set! : ( vector number any -> void )
+member : ( any pair -> pair U { #f } )
