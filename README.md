@@ -1,0 +1,1 @@
+# AlgoritmenDatastructuren1-1SCH
