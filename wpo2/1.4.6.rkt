@@ -1,0 +1,17 @@
+; (pair → any)
+; O(6n - 1)
+(define (last-of-list lst)
+  (cond ((null? lst)
+         '()
+         ((null? (cdr lst))
+          (car lst))
+         (else
+           (last-of-list (cdr lst))))))
+
+; (vector → any)
+; O(3)
+(define (last-of-vector vctr)
+  (let ((length (vector-length vctr)
+                (if (< length 1)
+                    '()
+                    (vector-ref vctr (- length 1)))))))
