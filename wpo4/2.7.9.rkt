@@ -1,0 +1,161 @@
+#lang r7rs
+;-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+;-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+;-*-*                                                                 *-*-
+;-*-*         Pattern Matching (Knuth Morris Pratt Algorithm)         *-*-
+;-*-*                       With Trace Display                        *-*-
+;-*-*                                                                 *-*-
+;-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+;-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+(define-library (kmp) 
+  (export match)
+  (import (scheme base))
+  (import (only (scheme write) display write newline))
+  (begin
+    (define (compute-failure-function p)
+      (define n-p (string-length p))
+      (define sigma-table (make-vector n-p 0))
+      (let loop
+        ((i-p 2)
+         (k 0))
+        (when (< i-p n-p)
+          (cond
+            ((eq? (string-ref p k) 
+                  (string-ref p (- i-p 1)))
+             (vector-set! sigma-table i-p (+ k 1))
+             (loop (+ i-p 1) (+ k 1)))
+            ((> k 0)
+             (loop i-p (vector-ref sigma-table k)))
+            (else ; k=0
+             (vector-set! sigma-table i-p 0)
+             (loop (+ i-p 1) k)))))
+        (vector-set! sigma-table 0 -1)
+        
+        ;; Display the failure function table
+        (display "Failure Function for pattern: ")
+        (display p)
+        (newline)
+        (display "Position:  ")
+        (let print-pos ((i 0))
+          (when (< i n-p)
+            (display i)
+            (display " ")
+            (print-pos (+ i 1))))
+        (newline)
+        (display "Character: ")
+        (let print-char ((i 0))
+          (when (< i n-p)
+            (display (string-ref p i))
+            (display " ")
+            (print-char (+ i 1))))
+        (newline)
+        (display "Sigma:     ")
+        (let print-sigma ((i 0))
+          (when (< i n-p)
+            (display (vector-ref sigma-table i))
+            (display " ")
+            (print-sigma (+ i 1))))
+        (newline)
+        (newline)
+        
+        (lambda (q)
+          (vector-ref sigma-table q)))
+ 
+    (define (match t p)
+      (define n-t (string-length t))
+      (define n-p (string-length p))
+      (define sigma (compute-failure-function p))
+      
+      (display "Text:    ")
+      (display t)
+      (newline)
+      (display "Pattern: ")
+      (display p)
+      (newline)
+      (newline)
+      (display "Starting KMP search...")
+      (newline)
+      (newline)
+      
+      (let loop
+        ((i-t 0)
+         (i-p 0)
+         (iteration 1)) 
+        (display "--- Iteration ")
+        (display iteration)
+        (display " ---")
+        (newline)
+        (display "i-t = ")
+        (display i-t)
+        (display ", i-p = ")
+        (display i-p)
+        (newline)
+        
+        ;; Display text
+        (display "Text:    ")
+        (display t)
+        (newline)
+        
+        ;; Display pattern alignment
+        (display "Pattern: ")
+        (let spaces ((s 0))
+          (when (< s i-t)
+            (display " ")
+            (spaces (+ s 1))))
+        (display p)
+        (newline)
+        
+        ;; Display pointer position
+        (display "         ")
+        (let spaces ((s 0))
+          (when (< s (+ i-t i-p))
+            (display " ")
+            (spaces (+ s 1))))
+        (display "^")
+        (newline)
+        (newline)
+        
+        (cond 
+          ((> i-p (- n-p 1))
+           (display "MATCH FOUND at position ")
+           (display i-t)
+           (newline)
+           i-t)
+          ((> i-t (- n-t n-p))
+           (display "NO MATCH - reached end of text")
+           (newline)
+           #f)
+          ((eq? (string-ref t (+ i-t i-p)) (string-ref p i-p))
+           (display "Characters match: ")
+           (display (string-ref t (+ i-t i-p)))
+           (display " = ")
+           (display (string-ref p i-p))
+           (newline)
+           (display "Advancing i-p")
+           (newline)
+           (newline)
+           (loop i-t (+ i-p 1) (+ iteration 1)))
+          (else
+           (display "Mismatch: ")
+           (display (string-ref t (+ i-t i-p)))
+           (display " ≠ ")
+           (display (string-ref p i-p))
+           (newline)
+           (display "Using sigma(")
+           (display i-p)
+           (display ") = ")
+           (display (sigma i-p))
+           (newline)
+           (display "Shifting pattern: new i-t = ")
+           (display (+ i-t (- i-p (sigma i-p))))
+           (display ", new i-p = ")
+           (display (if (> i-p 0) (sigma i-p) 0))
+           (newline)
+           (newline)
+           (loop (+ i-t (- i-p (sigma i-p))) 
+                 (if (> i-p 0) (sigma i-p) 0)
+                 (+ iteration 1))))))))
+
+;; Test with the specific example
+(import (kmp))
+(match "ABC ABCDAB ABCDABCDABDE" "ABCDABD")

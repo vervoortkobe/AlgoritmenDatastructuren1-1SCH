@@ -1,0 +1,26 @@
+#lang r7rs
+
+(import (scheme base)
+        (scheme write)
+        (prefix (a-d positional-list vector-positional-list) plist:)
+        (prefix (a-d pattern-matching quicksearch) pmatch:))
+
+; a)
+(define l (plist:new eq?))
+(plist:add-before! l "and")
+(plist:add-after! l "me")
+(plist:add-before! l "to" (plist:last l))
+(plist:add-after! l "goodday" (plist:first l))
+(plist:add-before! l "hello")
+(plist:add-after! l "world" (plist:first l))
+
+; b)
+(define (count-words-containing-e l)
+  (define counter 0)
+  (plist:for-each l (lambda (x)
+                      (if (pmatch:match x "e")
+                      (set! counter (+ counter 1)))))
+  counter)
+(display "(count-words-containing-e l) ---> ")
+(display (count-words-containing-e l))
+(newline)
