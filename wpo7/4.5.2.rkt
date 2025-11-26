@@ -1,0 +1,41 @@
+#lang r7rs
+
+(import (scheme base)
+        (scheme write)
+        (prefix (a-d stack vectorial) stack:))
+
+(define (opening-tag? symb)
+  (define s (symbol->string symb))
+  (and (equal? (string-ref s 0) #\<)
+       (not (equal? (string-ref s 1) #\/))
+       (equal? (string-ref s (- (string-length s) 1)) #\>)))
+
+(define (closing-tag? symb)
+  (define s (symbol->string symb))
+  (and (equal? (string-ref s 0) #\<)
+       (equal? (string-ref s 1) #\/)
+       (equal? (string-ref s (- (string-length s) 1)) #\>)))
+
+(define (matches? tag1 tag2)
+  (define s1 (symbol->string tag1))
+  (define s2 (symbol->string tag2))
+  (and (opening-tag? tag1)
+       closing-tag? tag2)
+       (equal? (substring s1 1 (- (string-length s1) 1))
+               (substring s2 2 (- (string-length s2) 1))))
+
+(define (valid? expr)
+  (define stack (stack:new))
+  (let loop ((current expr))
+    (if (null? current)
+        (stack:empty? stack)
+        (let ((element (car current)))
+          (cond ((opening-tag? element) (stack:push! stack element)
+                                        (loop (cdr current)))
+                ((closing-tag? element) (and (matches? (stack:pop! stack)
+                                                       element)
+                                             (loop (cdr current))))
+                (else (loop (cdr current))))))))
+ 
+(display (valid? '(<html> <head> <title> the title </title> </head> <body> <p> a paragraph </p> </body> </html>))) (newline)
+(display (valid? '(<html> <head> <title> the title </title> </head> <body> <p> a paragraph <p> </body> </html>))) (newline)
